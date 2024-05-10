@@ -1,4 +1,5 @@
 // Created 10 March 2024
+// Imitating the Google dinosaur game on oled screen with arduino 
 #![no_std]
 #![no_main]
 
@@ -86,29 +87,11 @@ const CACTUS_COVER: [u8; 6] = [
     0b00000000,
     0b00000000,
 ];
-/*const BIG_CACTUS: [u8; 18] = [ // krzywo bo 9 szerokości
-    0b00011000,
-    0b00001100,
-    0b00110110,
-    0b00011011,
-    0b00001101,
-    0b01110011,
-    0b01101101,
-    0b11110110,
-    0b01111011,
-    0b00001111,
-    0b10000111,
-    0b10000011,
-    0b00000001,
-    0b10000000,
-    0b11000000,
-    0b01100000,
-    0b00110000,
-    0b00011000,
-];*/
+
 
 #[arduino_hal::entry]
 fn main() -> ! {
+    // Perypherials initiations
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
@@ -123,13 +106,13 @@ fn main() -> ! {
 
     let button = pins.d12.into_floating_input();
 
-
     let interface = I2CDisplayInterface::new(i2c);
     let mut display = Ssd1306::new(interface, ssd1306::size::DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
     display.init().unwrap();
 
 
+    // Images initiations for oled screen
     let mut dino_pos: i32 = 30;
 
     let dinosaur_raw: ImageRaw<BinaryColor> = ImageRaw::new(&DINOSAUR, 16);
@@ -152,90 +135,25 @@ fn main() -> ! {
 
     let mut cactus_pos: i32 = 128;
 
-
- //    let yoffset = 20;
-
- /*    let style = PrimitiveStyleBuilder::new()
-        .stroke_width(1)
-        .stroke_color(BinaryColor::On)
-        .build();
-*/
-    // screen outline
-    // default display size is 128x64 if you don't pass a _DisplaySize_
-    // enum to the _Builder_ struct
- /*   Rectangle::new(Point::new(0, 0), Size::new(128, 64))
-        .into_styled(style)
-        .draw(&mut display)
-        .unwrap();
-
-    display.flush().unwrap();
-
-    arduino_hal::delay_ms(2000);*/
-
-    // triangle
-  /*   Triangle::new(
-        Point::new(16, 16 + yoffset),
-        Point::new(16 + 16, 16 + yoffset),
-        Point::new(16 + 8, yoffset),
-    )
-    .into_styled(style)
-    .draw(&mut display)
-    .unwrap();
-*/
- /*   arduino_hal::delay_ms(2000);
-
-  // square
-     Rectangle::new(Point::new(52, yoffset), Size::new_equal(16))
-        .into_styled(style)
-        .draw(&mut display)
-        .unwrap();
-*/
-   // circle
- /*   Circle::new(Point::new(88, yoffset), 8)
-        .into_styled(style)
-        .draw(&mut display)
-        .unwrap();
-*/
-   //display.flush().unwrap();
-
-    /*let text_style = MonoTextStyleBuilder::new()
-    .font(&FONT_5X7)
-    .text_color(BinaryColor::On)
-    .build();
-
-   /* Text::with_baseline("H ", Point::zero(), text_style, Baseline::Top)
-    .draw(&mut display)
-    .unwrap();*/
-
-    let hi = "123456ABCDEXYZ";
-
-    Text::with_baseline("123456ABCDEXYZ", Point::new(0, 0), text_style, Baseline::Top)
-    .draw(&mut display)
-    .unwrap();*/
-
-
-    //legs_jump.draw(&mut display).unwrap();
-
     arduino_hal::delay_ms(1000);
 
     display.flush().unwrap();
 
     loop {
-
-        /*Image::new(&cactus_cover_raw, Point::new(cactus_pos+8, dino_pos+4))
-        .draw(&mut display)
-        .unwrap();*/
     
+        // Drawing cactus
         Image::new(&big_cactus_raw, Point::new(cactus_pos, dino_pos))
         .draw(&mut display)
         .unwrap();
 
+        // Updating cactus position
         if cactus_pos > -8 {
             cactus_pos = cactus_pos - 2;
         } else {
             cactus_pos = 128;
         }
 
+        // Dinosaur animation when button not pressed
         if button.is_low() {
 
             led.set_low();
@@ -266,16 +184,16 @@ fn main() -> ! {
             display.flush().unwrap();
             
         }
-        else 
+        else // Animating jump
         {
             led.set_high();
 
-            let mut offset_array = [7,11,14,17,19,20,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,20,19,17,14,11,7,0];
+            // jump profile
+            let offset_array = [7,11,14,17,19,20,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,20,19,17,14,11,7,0];
             let mut counter: u8 = 0;
 
             for offset in offset_array {
-
-                
+             
                 if counter < 8 {
                     Image::new(&cover_raw, Point::new(4, dino_pos-offset+13))
                     .draw(&mut display)
@@ -287,6 +205,7 @@ fn main() -> ! {
                 }
                 counter = counter + 1;
 
+                // Updating cactus whille dinosaur is jumping
                 Image::new(&big_cactus_raw, Point::new(cactus_pos, dino_pos))
                 .draw(&mut display)
                 .unwrap();  
@@ -306,8 +225,5 @@ fn main() -> ! {
                 display.flush().unwrap();
             }
         }
-
-        //arduino_hal::delay_ms(10);
-
     }
 }
